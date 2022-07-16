@@ -586,6 +586,8 @@ def syncloop(v):
 
     # Copy merged playlists back into tmp/plex/ and tmp/local/ with prepends re-added
     for filename in os.listdir(_merged):
+        print("analyzing and copying " + filename)
+        
         new_tracks = io.open(os.path.join(_merged, filename),
                             'r+', encoding='utf8').read().splitlines()
         plex_tracks = []
@@ -600,8 +602,19 @@ def syncloop(v):
 
         # Writes local tracks back to local tmp
         f = io.open(os.path.join(_local, filename), 'w+', encoding='utf8')
+        i =0
         for line in local_tracks:
-            f.write(line + '\n')
+            
+            if i % 50 == 0:
+                print(str(round(float(i)/ float(len(local_tracks)) * 100, 2)) + '%')  # Print progress
+            i+=1
+            # check if file exists on disk
+            if not os.path.isfile(line):
+                # ask to delete if file doesn't exist
+                if input("%s cannot be found on disk, delete from %s? (y/n): "%(line,filename)) != "y":
+                    f.write(line + '\n')
+            else:
+                f.write(line + '\n')
         f.close()
 
         # Writes plex tracks back to plex tmp
