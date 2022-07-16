@@ -69,6 +69,12 @@ def plexGetRequest(url, plex_token, check_ssl):
           (resp.status_code, resp.reason))
     raise SystemExit
 
+# get server info
+def getServerInfo(server_url, plex_token, check_ssl):
+    print("Requesting server info from Plex...")
+    url = server_url + "/?X-Plex-Token=" + plex_token
+    resp = plexGetRequest(url, plex_token, check_ssl)    
+    return resp.attrib
 
 def plexSections(server_url, plex_token, check_ssl):
     print("Requesting section info from Plex...")
@@ -561,7 +567,7 @@ def syncloop(v):
 
     # Merges playlists from tmp/local/ and tmp/plex/ and puts the output in tmp/merged
     for filename in os.listdir(_local):
-
+        
         print(('Merging: ' + filename))
 
         local_tracks = io.open(os.path.join(
@@ -602,19 +608,26 @@ def syncloop(v):
 
         # Writes local tracks back to local tmp
         f = io.open(os.path.join(_local, filename), 'w+', encoding='utf8')
-        i =0
-        for line in local_tracks:
-            
+        deleteallmissing=False
+        i=0
+        for line in local_tracks:  
+            i+=1       
             if i % 50 == 0:
                 print(str(round(float(i)/ float(len(local_tracks)) * 100, 2)) + '%')  # Print progress
-            i+=1
-            # check if file exists on disk
-            if not os.path.isfile(line):
-                # ask to delete if file doesn't exist
-                if input("%s cannot be found on disk, delete from %s? (y/n): "%(line,filename)) != "y":
+                
+                # check if file exists on disk
+                if os.path.isfile(line):
                     f.write(line + '\n')
-            else:
-                f.write(line + '\n')
+                else:
+                    if not deleteallmissing:
+                        # ask to delete if file doesn't exist
+                        inp = input("%s cannot be found on disk, delete from %s? (y/n/a): "%(line,filename))
+                        if inp == 'y' or inp == 'a':
+                            if inp == 'a':
+                                deleteallmissing = True
+                    if deleteallmissing or inp == 'y':
+                        # just dont write line to file                        
+                        print("Deleted %s from %s"%(line,filename))            
         f.close()
 
         # Writes plex tracks back to plex tmp
@@ -730,6 +743,9 @@ else:
     print("Forcing setup sequence...")
     v = setupVariables()
 
+# main loop
 for variables in v['servers']:
-    print("syncing "+variables['server_url'])
+    serverinfo = getServerInfo(variables['server_url'],variables['plex_token'],variables['check_ssl'])
+    variables['name'] = serverinfo['friendlyName']
+    print("syncing %s (%s)"%(variables['name'],variables['server_url']))
     syncloop(variables)
