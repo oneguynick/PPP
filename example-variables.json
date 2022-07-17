@@ -1,13 +1,29 @@
-{
-    "server_url": "http://192.168.1.100:32400",
-    "check_ssl": "True",
-    "plex_token": "A1B3c4bdHA3s8COTaE3l",
-    "local_playlists": "/mnt/Playlists",
-    "working_directory": "/mnt/PPP",
-    "working_directory_plex": "/mnt/PPP",
-    "section_id": "11",
-    "local_prepend": "Z:\\Media\\Music\\",
-    "plex_prepend": "/mnt/Media/Music",
-    "local_convert": "w2u",
-    "plex_convert": false
-}
+{ "servers":[
+    {//windows based server
+      "server_url": "http://127.0.0.1:32400",
+      "check_ssl": "False",
+      "plex_token": "XXXXXXXXXXXX",
+      "local_playlists": "N:\\Multimedia\\Musicbee Library\\Playlists",
+      "working_directory": "WD",
+      "working_directory_plex": "C:\\Users\\jelle\\Documents\\PPP\\WD",
+      "section_id": "4",//find the section id of the library you want to sync to
+      "local_prepend": "N:\\Multimedia\\Music",
+      "plex_prepend": "N:\\Multimedia\\Music",
+      "local_convert": false,
+      "plex_convert": false
+    },
+    { //linux based server
+      "server_url": "http://192.168.0.128:32400", 
+      "check_ssl": "True",
+      "plex_token": "XXXXXXXXXXXXXXXX",
+      "local_playlists": "N:\\Multimedia\\Musicbee Library\\Playlists",
+      "working_directory": "N:\\Multimedia\\Music\\PPPWD",
+      "working_directory_plex": "/nasmount/Music/PPPWD",
+      "section_id": "1", //find the section id of the library you want to sync to
+      "local_prepend": "N:\\Multimedia\\Music",
+      "plex_prepend": "/nasmount/Music",
+      "local_convert": false,
+      "plex_convert": "w2u" 
+    }  
+  ]
+  }
