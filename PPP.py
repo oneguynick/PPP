@@ -69,6 +69,23 @@ def plexGetRequest(url, plex_token, check_ssl):
           (resp.status_code, resp.reason))
     raise SystemExit
 
+def plexDeleteRequest(url, plex_token, check_ssl):
+    print("Deleting playlist\nURL: " + url.replace(plex_token, "***********"))
+    try:
+        resp = requests.delete(url, timeout=30, verify=check_ssl)
+        if resp.ok:
+            print("Request was successful.")
+            br()
+            return
+    except Exception:
+        print("ERROR: Issue encountered with request.")
+        raise SystemExit
+
+    print("ERROR: Request failed.")
+    print('ERROR: Return code: %d Reason: %s' %
+          (resp.status_code, resp.reason))
+    raise SystemExit
+
 # get server info
 def getServerInfo(server_url, plex_token, check_ssl):
     print("Requesting server info from Plex...")
@@ -365,18 +382,24 @@ def backupLocal(v):
             oldest_backup = backup_time.index(min(backup_time))
 
             # Delete oldest backup
-            shutil.rmtree(os.path.join(
-                'local_backups/'+v['name'], backups[oldest_backup]))
-            del backups[oldest_backup], backup_time[oldest_backup]
+            try:
+                shutil.rmtree(os.path.join(
+                    'local_backups/'+v['name'], backups[oldest_backup]))
+                del backups[oldest_backup], backup_time[oldest_backup]
 
-            print('Deleted oldest backup')
+                print('Deleted oldest backup')
+            except Exception:
+                print('ERROR: Could not delete oldest backup')
+                print(Exception)
+                break
+
             br()
 
         # Backup local playlists
         try:
             print('Backing up local playlists...\n')
             shutil.copytree(v['local_playlists'],
-                            os.path.join('local_backups/'+v['name'], runtime))
+                            os.path.join('local_backups/'+v['name'], runtime),ignore=shutil.ignore_patterns('.git'))
             print('Backed up local playlists to ' +
                   os.path.join('local_backups/'+v['name'], runtime))
         except Exception:
@@ -450,6 +473,9 @@ def syncloop(v):
 
     print("I'll ignore " + v['local_prepend'] + " from local playlists and " +
         v['plex_prepend'] + " from Plex playlists\n")
+    
+    if v['OneWaySync']:
+        print("I'll only sync playlists from local to Plex")
 
     # Check if Plex playlists need to be converted
     if v['plex_convert'] == "w2u":
@@ -489,32 +515,38 @@ def syncloop(v):
 
     # Get keys for all Plex music playlists
     keys = plexPlaylistKeys(v['server_url'], v['plex_token'], check_ssl)
+    if v['OneWaySync']:
+        # delete all plex playlists
+        for key in keys:
+            key=key.replace('/items','')
+            plexDeleteRequest(v['server_url']+key+'?X-Plex-Token='+v['plex_token'], v['plex_token'], check_ssl)
 
-    # Copies Plex playlists to .tmp/plex/ folder
-    for key in keys:
-        title, playlist = plexPlaylist(
-            v['server_url'], v['plex_token'], key, check_ssl)
+    if not v['OneWaySync']:
+        # Copies Plex playlists to .tmp/plex/ folder
+        for key in keys:
+            title, playlist = plexPlaylist(
+                v['server_url'], v['plex_token'], key, check_ssl)
 
-        # Strip prepend
-        playlist = [stripPrepend(track, v['plex_prepend'], False)
-                    for track in playlist]
+            # Strip prepend
+            playlist = [stripPrepend(track, v['plex_prepend'], False)
+                        for track in playlist]
 
-        # Convert to PPP path style
-        playlist = [convertPath(track, v['plex_convert'], False)
-                    for track in playlist]
+            # Convert to PPP path style
+            playlist = [convertPath(track, v['plex_convert'], False)
+                        for track in playlist]
 
-        print('Saving Plex playlist: ' + title)
+            print('Saving Plex playlist: ' + title)
 
-        # Get each track and save to file
-        f = io.open(os.path.join(_plex, title + '.m3u'),
-                    'w+', encoding='utf8')
-        for track in playlist:
-            f.write(track + '\n')
-        f.close()
+            # Get each track and save to file
+            f = io.open(os.path.join(_plex, title + '.m3u'),
+                        'w+', encoding='utf8')
+            for track in playlist:
+                f.write(track + '\n')
+            f.close()
 
-        print('Save successful!')
+            print('Save successful!')
 
-        br()
+            br()
 
     # Copies local playlists to .tmp/local/ folder
     for root, dirs, files in os.walk(v['local_playlists']):
@@ -544,16 +576,16 @@ def syncloop(v):
                 f.close()
 
     br()
-
+    if not v['OneWaySync']:
     # Checks for unique playlists to .tmp/plex/, and moves them to .tmp/merged/
-    for filename in os.listdir(_plex):
-        if not os.path.isfile(os.path.join(_local, filename)):
-            print(('Found new Plex playlist: ' + filename))
+        for filename in os.listdir(_plex):
+            if not os.path.isfile(os.path.join(_local, filename)):
+                print(('Found new Plex playlist: ' + filename))
 
-            os.rename(os.path.join(_plex, filename),
-                    os.path.join(_merged, filename))
+                os.rename(os.path.join(_plex, filename),
+                        os.path.join(_merged, filename))
 
-            br()
+                br()
 
     # Checks for unique playlists to .tmp/local/, and copies them to .tmp/merged/
     for filename in os.listdir(_local):
@@ -564,29 +596,29 @@ def syncloop(v):
                     os.path.join(_merged, filename))
 
             br()
-
+    if not v['OneWaySync']:
     # Merges playlists from tmp/local/ and tmp/plex/ and puts the output in tmp/merged
-    for filename in os.listdir(_local):
-        
-        print(('Merging: ' + filename))
+        for filename in os.listdir(_local):
+            
+            print(('Merging: ' + filename))
 
-        local_tracks = io.open(os.path.join(
-            _local, filename), 'r', encoding='utf8').read().splitlines()
+            local_tracks = io.open(os.path.join(
+                _local, filename), 'r', encoding='utf8').read().splitlines()
 
-        plex_tracks = io.open(os.path.join(
-            _plex, filename), 'r', encoding='utf8').read().splitlines()
+            plex_tracks = io.open(os.path.join(
+                _plex, filename), 'r', encoding='utf8').read().splitlines()
 
-        f = io.open(os.path.join(_merged, filename), 'w+', encoding='utf8')
+            f = io.open(os.path.join(_merged, filename), 'w+', encoding='utf8')
 
-        for line in local_tracks:  # Writes local_tracks to merged playlist
-            if not line.startswith('#'):  # Skips m3u tags beginning with #
+            for line in local_tracks:  # Writes local_tracks to merged playlist
+                if not line.startswith('#'):  # Skips m3u tags beginning with #
+                    f.write(line + '\n')
+                if line in plex_tracks:  # Remove duplicates
+                    plex_tracks.remove(line)
+
+            for line in plex_tracks:  # Writes plex_tracks to merged playlist
                 f.write(line + '\n')
-            if line in plex_tracks:  # Remove duplicates
-                plex_tracks.remove(line)
-
-        for line in plex_tracks:  # Writes plex_tracks to merged playlist
-            f.write(line + '\n')
-        f.close()
+            f.close()
 
     br()
 
@@ -615,19 +647,21 @@ def syncloop(v):
             if i % 50 == 0:
                 print(str(round(float(i)/ float(len(local_tracks)) * 100, 2)) + '%')  # Print progress
                 
-                # check if file exists on disk
-                if os.path.isfile(line):
-                    f.write(line + '\n')
+            # check if file exists on disk
+            if os.path.isfile(line):
+                f.write(line + '\n')
+            else:
+                print("%s cannot be found on disk."%(line))
+                # check connection to local_prepend folder
+                if os.path.isdir(variables['local_prepend']):
+                    deleteallmissing = True
                 else:
-                    if not deleteallmissing:
-                        # ask to delete if file doesn't exist
-                        inp = input("%s cannot be found on disk, delete from %s? (y/n/a): "%(line,filename))
-                        if inp == 'y' or inp == 'a':
-                            if inp == 'a':
-                                deleteallmissing = True
-                    if deleteallmissing or inp == 'y':
-                        # just dont write line to file                        
-                        print("Deleted %s from %s"%(line,filename))            
+                    print("cannot connect to %s" % variables['local_prepend'])	
+                    f.write(line + '\n') # write file anyway
+                
+                if deleteallmissing:
+                    # delete by not writing line to file  
+                    print("Deleted %s from %s"%(line,filename))            
         f.close()
 
         # Writes plex tracks back to plex tmp
@@ -637,6 +671,7 @@ def syncloop(v):
         f.close()
 
     # POST new playlists to Plex
+        
     url = v['server_url'] + '/playlists/upload?'
     headers = {'cache-control': "no-cache"}
 
@@ -743,8 +778,12 @@ else:
     print("Forcing setup sequence...")
     v = setupVariables()
 
+
+
+
 # main loop
 for variables in v['servers']:
+    # variables['OneWaySync'] = True
     serverinfo = getServerInfo(variables['server_url'],variables['plex_token'],variables['check_ssl'])
     variables['name'] = serverinfo['friendlyName']
     print("syncing %s (%s)"%(variables['name'],variables['server_url']))
