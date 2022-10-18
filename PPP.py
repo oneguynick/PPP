@@ -682,7 +682,7 @@ def syncloop(v):
             v['working_directory_plex'], '.tmp', 'plex', filename), v['plex_convert'], True)
 
         querystring = urllib.parse.urlencode(OrderedDict(
-            [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
+            [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]),safe='/')
         resp = requests.post(
             url, data="", headers=headers, params=querystring, verify=check_ssl)
 
@@ -770,6 +770,7 @@ if not args.setup:
             dummy=2
         except Exception as e:
             print("ERROR: Unable to load variables... check file contains valid json!")
+            print(e)
             raise SystemExit
     else:
         print("INFO: Couldn't find existing variables... proceeding with initial setup\n")
