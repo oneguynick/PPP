@@ -785,7 +785,10 @@ else:
 # main loop
 for variables in v['servers']:
     # variables['OneWaySync'] = True
-    serverinfo = getServerInfo(variables['server_url'],variables['plex_token'],variables['check_ssl'])
+    try:
+        serverinfo = getServerInfo(variables['server_url'],variables['plex_token'],variables['check_ssl'])
+    except:
+        continue
     variables['name'] = serverinfo['friendlyName']
     print("syncing %s (%s)"%(variables['name'],variables['server_url']))
     syncloop(variables)
