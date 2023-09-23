@@ -1,34 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
---- PPP (Plex Playlist Pusher) ---
-Synchronises playlists between local files (.m3u) and Plex playlists.
-If there are differences between local and Plex playlists, both will be
-merged and duplicates deleted; meaning tracks can be added on one and
-updated on both... but must be deleted on BOTH to remove completely
-(the same goes for new playlists).
-
-XDGFX 2020
-
-17/03/19 Started working on script
-19/03/19 Original v2.0 Release (where v1.0 was bash version)
-20/03/19 v2.1 Updated to use tempfile module temporary directory
-22/03/19 v2.1.1 General improvements and bug fixes
-23/03/19 v2.1.2 Fixed v2.1 and v2.1.1 releases, no longer using tempfile
-30/03/19 v2.1.3 Added timestamp and improved character support
-20/12/19 v3.0.0 MAJOR REWRITE: Added setup procedure and UNIX / Windows compatibility
-30/12/19 v3.0.1 Added ability to ignore SSL certificates
-02/01/20 v3.0.2 Fixed prepend conversion when PPP and playlist machine not same type
-07/01/20 v3.0.3 Touches and tweaks by cjnaz
-09/01/20 v3.0.4 Fixed custom retention arguments
-17/04/20 v3.0.5 Improved support for Plex running in containers by gotson
-01/09/20 v3.0.6 General cleanup by pirtoo
-
-Uses GNU General Public License
-"""
-
-
 # --- IMPORT MODULES ---
 import warnings
 import json                                  # for saving of variables
@@ -43,7 +15,7 @@ from collections import OrderedDict          # url ordering
 import requests                              # HTTP POST requests
 from datetime import datetime                # for timestamp
 
-vers = "v3.0.6"
+vers = "v4.0.0"
 
 
 # --- FUNCTIONS ---
