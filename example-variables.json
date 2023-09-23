@@ -10,7 +10,8 @@
       "local_prepend": "N:\\Multimedia\\Music",
       "plex_prepend": "N:\\Multimedia\\Music",
       "local_convert": false,
-      "plex_convert": false
+      "plex_convert": false,
+      "OneWaySync": false
     },
     { //linux based server
       "server_url": "http://192.168.0.128:32400", 
@@ -23,7 +24,8 @@
       "local_prepend": "N:\\Multimedia\\Music",
       "plex_prepend": "/nasmount/Music",
       "local_convert": false,
-      "plex_convert": "w2u" 
+      "plex_convert": "w2u",
+      "OneWaySync": false
     }  
   ]
   }
