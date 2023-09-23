@@ -15,6 +15,8 @@ A simple Python 3 script used to automatically:
 - push the updated playlists back to Plex using the Plex Playlist API (https://forums.plex.tv/t/can-plexamp-read-and-use-m3u-playlists/234179/21)
 - copy the updated playlists back to your local directory
 
+NOTE: This will only export non-Smart playlists. Any playlists created with smart filters will not be exported.
+
 This will keep Plex playlists and local playlists synchronised.
 If you want to delete a playlist or song from a playlist, it must be removed from BOTH local and Plex playlists.
 
